@@ -6,7 +6,7 @@ import math
 import json
 import csv
 
-# Use reportlab for PDF generation
+
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas as pdf_canvas
 
@@ -15,18 +15,17 @@ matplotlib.use('TkAgg')
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
-# Serial port settings
 PORT = "COM4"
 BAUD_RATE = 9600
 
 class ArduinoController:
     def __init__(self, port, baud_rate):
-        # Open serial connection
+      
         self.ser = serial.Serial(port, baud_rate, timeout=1)
         time.sleep(2)
         print("Połączono z Arduino")
 
-        # GUI elements set later
+     
         self.root = None
         self.distance_label = None
         self.angle_label = None
@@ -35,13 +34,13 @@ class ArduinoController:
         self.start_listen_btn = None
         self.stop_listen_btn = None
 
-        # Radar plotting
+        
         self.radar_data = []
         self.current_angle = 0.0
 
-        # Recording
+  
         self.listening = False
-        self.records = []  # dicts: timestamp, angle, distance
+        self.records = []  
 
     def send_command(self, command):
         if self.ser.is_open:
@@ -67,7 +66,7 @@ class ArduinoController:
     def stop_listening(self):
         if not self.listening:
             return
-        # Stop servo
+     
         self.send_command('stop')
         self.listening = False
         self.detection_label.config(text="Recording stopped.")
@@ -101,7 +100,7 @@ class ArduinoController:
                     json.dump(self.records, f, ensure_ascii=False, indent=2)
 
             elif ext == 'pdf':
-                # Generate simple PDF with list of detections
+            
                 c = pdf_canvas.Canvas(filepath, pagesize=letter)
                 width, height = letter
                 c.setFont("Helvetica", 12)
@@ -167,8 +166,11 @@ class ArduinoController:
         if detected:
             d, a = detected_info
             self.detection_label.config(text=f"Wykryto obiekt na {d} cm i {a}°", foreground='red')
-        elif self.listening:
-            self.detection_label.config(text="Recording...", foreground='yellow')
+        else:
+            if self.listening:
+                self.detection_label.config(text="Recording...", foreground='yellow')
+            else:
+                self.detection_label.config(text="", foreground='red')
         self.update_radar()
         self.root.after(200, self.update_labels)
 
@@ -208,13 +210,13 @@ def create_gui(controller):
         ttk.Button(send_frame, text=cmd.capitalize(), command=lambda c=cmd: controller.send_command(c)).pack(side=tk.LEFT, padx=5)
     ttk.Button(send_frame, text="Reset", command=controller.reset_all).pack(side=tk.LEFT, padx=5)
     listen_frame = ttk.Frame(info_frame); listen_frame.pack(pady=5)
-    controller.start_listen_btn = ttk.Button(listen_frame, text="Start Listening", command=controller.start_listening)
+    controller.start_listen_btn = ttk.Button(listen_frame, text="włącz nasłuchiwanie", command=controller.start_listening)
     controller.start_listen_btn.pack(side=tk.LEFT, padx=5)
-    controller.stop_listen_btn = ttk.Button(listen_frame, text="Stop Listening", command=controller.stop_listening, state='disabled')
+    controller.stop_listen_btn = ttk.Button(listen_frame, text="wyłącz nasłuchiwanie", command=controller.stop_listening, state='disabled')
     controller.stop_listen_btn.pack(side=tk.LEFT, padx=5)
     controller.indicator_label = ttk.Label(listen_frame, text='', foreground='red', font=('Helvetica', 16))
     controller.indicator_label.pack(side=tk.LEFT, padx=5)
-    ttk.Button(info_frame, text='Close', command=lambda: on_close(controller)).pack(pady=10)
+    ttk.Button(info_frame, text='Zamknij program', command=lambda: on_close(controller)).pack(pady=10)
     fig = Figure(figsize=(5,5), facecolor='#000'); ax = fig.add_subplot(111, projection='polar')
     controller.radar_ax = ax; controller.radar_canvas = FigureCanvasTkAgg(fig, master=content)
     controller.radar_canvas.get_tk_widget().pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
